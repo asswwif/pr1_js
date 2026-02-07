@@ -20,7 +20,6 @@ body {
     margin: 0 auto;
 }
 
-/* Красивий заголовок та пошук */
 .main-header {
     display: flex;
     justify-content: space-between;
@@ -55,10 +54,9 @@ body {
     box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
 }
 
-/* Сітка подій */
 #events-container {
     display: grid;
-    grid-template-columns: repeat(4, 1fr); /* Рівно 4 колонки */
+    grid-template-columns: repeat(4, 1fr);
     gap: 25px;
 }
 
@@ -66,7 +64,7 @@ body {
     background: var(--card-bg);
     border: 1px solid var(--border-color);
     padding: 20px;
-    height: 220px; /* Фіксована висота для симетрії */
+    height: 220px; 
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -101,7 +99,6 @@ body {
     margin-top: 10px;
 }
 
-/* Кнопки знизу */
 .card-actions {
     display: flex;
     justify-content: space-between;
@@ -133,7 +130,6 @@ body {
     color: #ff4d4d;
 }
 
-/* Пагінація */
 .pagination-container {
     display: flex;
     justify-content: center;
@@ -163,7 +159,6 @@ body {
     cursor: not-allowed;
 }
 
-/* Адаптивність */
 @media (max-width: 1100px) { #events-container { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 600px) { 
     #events-container { grid-template-columns: 1fr; }

@@ -5,21 +5,19 @@ let state = {
     allEvents: [],
     searchQuery: "",
     currentPage: 1,
-    rowsPerPage: 8 // Заповнюємо сторінку повністю
+    rowsPerPage: 8 
 };
 
-// Компонент EventCard (отримуєProps)
 function createEventCard(event, isFav) {
     const card = document.createElement('div');
     card.className = 'event-card';
     
-    // Передаємо Props: назву, опис, дату та організатора
     card.innerHTML = `
         <div class="card-top">
             <h3>${event.title}</h3>
             <p class="desc">${event.body}</p>
             <div class="event-meta">
-                <span>📅 ${event.date}</span> | <span>🎨 ${event.organizer}</span>
+                <span>${event.date}</span> | <span>${event.organizer}</span>
             </div>
         </div>
         <div class="card-actions">
@@ -33,8 +31,8 @@ function createEventCard(event, isFav) {
 
     const btn = card.querySelector('.btn-fav');
     btn.onclick = () => {
-        toggleFavorite(event.id); // Використовуємо ваш storage.js з try...catch
-        render(); // Викликаємо перерендер
+        toggleFavorite(event.id); 
+        render(); 
     };
 
     return card;
@@ -48,14 +46,12 @@ function renderPagination(totalItems) {
     const pageCount = Math.ceil(totalItems / state.rowsPerPage);
     if (pageCount <= 1) return;
 
-    // Кнопка Назад
     const prev = document.createElement('button');
     prev.innerHTML = '&larr;';
     prev.disabled = state.currentPage === 1;
     prev.onclick = () => { state.currentPage--; render(); window.scrollTo(0,0); };
     nav.appendChild(prev);
 
-    // Номери
     for (let i = 1; i <= pageCount; i++) {
         const btn = document.createElement('button');
         btn.innerText = i;
@@ -64,7 +60,6 @@ function renderPagination(totalItems) {
         nav.appendChild(btn);
     }
 
-    // Кнопка Вперед
     const next = document.createElement('button');
     next.innerHTML = '&rarr;';
     next.disabled = state.currentPage === pageCount;

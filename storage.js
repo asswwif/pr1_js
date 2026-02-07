@@ -24,5 +24,5 @@ export function toggleFavorite(id) {
 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(favorites));
 
-    return index === -1; // Повертає true, якщо додано, і false, якщо видалено
+    return index === -1; 
 }
