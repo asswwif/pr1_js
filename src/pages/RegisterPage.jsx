@@ -1,25 +1,22 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { z } from 'zod';
-import { fetchEvents } from './src/utils/api.js';
+import { fetchEvents, registerToEvent } from '../utils/api.js';
 
 const registrationSchema = z.object({
-    fullName: z.string().min(1, "Поле обов'язкове"),
-    email: z.string().email("Некоректний email"),
-    dateOfBirth: z.string().min(1, "Поле обов'язкове").refine((date) => {
+    fullName: z.string().min(2, "ПІБ має містити принаймні 2 символи"),
+    email: z.string().email("Некоректний формат email"),
+    dateOfBirth: z.string().min(1, "Дата народження обов'язкова").refine((date) => {
         const birthDate = new Date(date);
         const today = new Date();
-        const age = today.getFullYear() - birthDate.getFullYear();
+        let age = today.getFullYear() - birthDate.getFullYear();
         const monthDiff = today.getMonth() - birthDate.getMonth();
-        
         if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-            return age - 1 >= 18;
+            age--;
         }
         return age >= 18;
-    }, "Вам має бути принаймні 18 років"),
-    source: z.enum(['social_media', 'friends', 'found_myself'], {
-        errorMap: () => ({ message: "Оберіть один з варіантів" })
-    })
+    }, "Реєстрація дозволена лише особам від 18 років"),
+    source: z.string().min(1, "Будь ласка, оберіть варіант")
 });
 
 export default function RegisterPage() {
@@ -36,58 +33,26 @@ export default function RegisterPage() {
     });
 
     useEffect(() => {
-        async function loadEvent() {
-            try {
-                const data = await fetchEvents();
-                
-                if (!data || data.length === 0) {
-                    alert('Помилка: дані не завантажилися');
-                    setLoading(false);
-                    return;
-                }
-                
-                const foundEvent = data.find(e => e.id === parseInt(eventId));
-                
-                if (foundEvent) {
-                    setEvent(foundEvent);
-                } else {
-                    alert(`Подію з ID ${eventId} не знайдено`);
-                }
-            } catch (err) {
-                alert('Помилка завантаження: ' + err.message);
-            } finally {
-                setLoading(false);
-            }
-        }
-        
-        loadEvent();
+        fetchEvents().then(data => {
+            const found = data.find(e => e.id === parseInt(eventId));
+            if (found) setEvent(found);
+            setLoading(false);
+        });
     }, [eventId]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
-        
-        if (errors[name]) {
-            setErrors(prev => ({ ...prev, [name]: undefined }));
-        }
+        if (errors[name]) setErrors(prev => ({ ...prev, [name]: null }));
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
         try {
             const validatedData = registrationSchema.parse(formData);
-            
-            const requestData = {
-                ...validatedData,
-                eventId: parseInt(eventId)
-            };
-            
-            console.log('POST request to server:', requestData);
-            
+            await registerToEvent({ ...validatedData, eventId: parseInt(eventId) });
             alert('Реєстрація успішна!');
             navigate(`/participants/${eventId}`);
-            
         } catch (error) {
             if (error instanceof z.ZodError) {
                 const fieldErrors = {};
@@ -99,53 +64,29 @@ export default function RegisterPage() {
         }
     };
 
-    if (loading) {
-        return (
-            <div className="container">
-                <div style={{ padding: '50px', textAlign: 'center' }}>
-                    <h2>Завантаження...</h2>
-                </div>
-            </div>
-        );
-    }
+    if (loading) return <div className="container">Завантаження...</div>;
 
-    if (!event) {
-        return (
-            <div className="container">
-                <div style={{ padding: '50px', textAlign: 'center' }}>
-                    <h2>Подію не знайдено</h2>
-                    <p>ID події: {eventId}</p>
-                    <button onClick={() => navigate('/')} className="back-btn" style={{ 
-                        marginTop: '20px',
-                        padding: '10px 20px',
-                        background: '#0066cc',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: 'pointer'
-                    }}>
-                        ← Повернутися на головну
-                    </button>
-                </div>
-            </div>
-        );
-    }
+    const sourceOptions = [
+        { value: 'social_media', label: 'Соціальні мережі' },
+        { value: 'friends', label: 'Від друзів' },
+        { value: 'found_myself', label: 'Знайшов(ла) самостійно' }
+    ];
 
     return (
         <div className="container">
-            <div className="register-header">
-                <button onClick={() => navigate('/')} className="back-btn">← Назад</button>
-                <h1>Event registration</h1>
-                <h2>{event.title}</h2>
-            </div>
+            <header className="register-header">
+                <button onClick={() => navigate(-1)} className="back-btn">← Назад</button>
+                <h1>Реєстрація на захід</h1>
+                <p className="event-title">"{event?.title}"</p>
+            </header>
 
             <form className="registration-form" onSubmit={handleSubmit}>
                 <div className="form-group">
-                    <label htmlFor="fullName">Full name</label>
+                    <label>ПІБ</label>
                     <input
                         type="text"
-                        id="fullName"
                         name="fullName"
+                        placeholder="Введіть ваше ПІБ"
                         value={formData.fullName}
                         onChange={handleChange}
                         className={errors.fullName ? 'error' : ''}
@@ -154,11 +95,11 @@ export default function RegisterPage() {
                 </div>
 
                 <div className="form-group">
-                    <label htmlFor="email">Email</label>
+                    <label>Email</label>
                     <input
                         type="email"
-                        id="email"
                         name="email"
+                        placeholder="example@mail.com"
                         value={formData.email}
                         onChange={handleChange}
                         className={errors.email ? 'error' : ''}
@@ -167,10 +108,9 @@ export default function RegisterPage() {
                 </div>
 
                 <div className="form-group">
-                    <label htmlFor="dateOfBirth">Date of birth</label>
+                    <label>Дата народження</label>
                     <input
                         type="date"
-                        id="dateOfBirth"
                         name="dateOfBirth"
                         value={formData.dateOfBirth}
                         onChange={handleChange}
@@ -180,38 +120,20 @@ export default function RegisterPage() {
                 </div>
 
                 <div className="form-group">
-                    <label>Where did you hear about this event?</label>
+                    <label>Звідки ви дізналися про захід?</label>
                     <div className="radio-group">
-                        <label>
-                            <input
-                                type="radio"
-                                name="source"
-                                value="social_media"
-                                checked={formData.source === 'social_media'}
-                                onChange={handleChange}
-                            />
-                            Social media
-                        </label>
-                        <label>
-                            <input
-                                type="radio"
-                                name="source"
-                                value="friends"
-                                checked={formData.source === 'friends'}
-                                onChange={handleChange}
-                            />
-                            Friends
-                        </label>
-                        <label>
-                            <input
-                                type="radio"
-                                name="source"
-                                value="found_myself"
-                                checked={formData.source === 'found_myself'}
-                                onChange={handleChange}
-                            />
-                            Found myself
-                        </label>
+                        {sourceOptions.map(option => (
+                            <label key={option.value} className="radio-label">
+                                <input
+                                    type="radio"
+                                    name="source"
+                                    value={option.value}
+                                    checked={formData.source === option.value}
+                                    onChange={handleChange}
+                                />
+                                {option.label}
+                            </label>
+                        ))}
                     </div>
                     {errors.source && <span className="error-message">{errors.source}</span>}
                 </div>

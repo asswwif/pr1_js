@@ -2,9 +2,9 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import EventsPage from './pages/EventsPage.jsx';
-import RegisterPage from '../RegisterPage.jsx';
-import ParticipantsPage from '../ParticipantsPage.jsx';
-import './style.css';
+import RegisterPage from './pages/RegisterPage.jsx';
+import ParticipantsPage from './pages/ParticipantsPage.jsx';
+import './styles/style.css'; 
 
 function App() {
     return (
@@ -18,4 +18,8 @@ function App() {
     );
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+ReactDOM.createRoot(document.getElementById('root')).render(
+    <React.StrictMode>
+        <App />
+    </React.StrictMode>
+);

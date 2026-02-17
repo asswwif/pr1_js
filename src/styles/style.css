@@ -7,6 +7,10 @@
     --text-muted: #555555;
 }
 
+* {
+    box-sizing: border-box;
+}
+
 body {
     background-color: var(--bg-color);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -175,7 +179,6 @@ body {
     cursor: not-allowed;
 }
 
-/* Стилі для сторінок реєстрації та учасників */
 
 .register-header, .participants-header {
     margin-bottom: 40px;
@@ -210,7 +213,6 @@ body {
     transform: translateX(-3px);
 }
 
-/* Форма реєстрації */
 
 .registration-form {
     max-width: 500px;
@@ -241,7 +243,7 @@ body {
     border: 1px solid var(--border-color);
     border-radius: 4px;
     font-size: 1rem;
-    box-sizing: border-box;
+    box-sizing: border-box; /* Гарантує однаковий розмір */
     transition: border-color 0.2s, box-shadow 0.2s;
 }
 
@@ -313,7 +315,6 @@ body {
     transform: scale(0.98);
 }
 
-/* Сторінка учасників */
 
 .participants-grid {
     display: grid;
@@ -354,7 +355,6 @@ body {
     font-size: 1.1rem;
 }
 
-/* Адаптивність */
 
 @media (max-width: 1100px) { 
     #events-container { 
