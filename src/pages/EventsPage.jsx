@@ -1,24 +1,30 @@
-import { fetchEvents } from '../utils/api.js';
-import { getFavorites, toggleFavorite } from '../utils/storage.js';
+import { useEffect, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { getEvents } from '../redux/eventsSlice';
+import { getFavorites, toggleFavorite } from '../utils/storage.js';
 
 export default function EventsPage() {
+    const dispatch = useDispatch();
     const navigate = useNavigate();
-    const [state, setState] = useState({
-        allEvents: [],
-        searchQuery: "",
-        currentPage: 1,
-        rowsPerPage: 8
-    });
+    
+    const { items: allEvents, status, error } = useSelector((state) => state.events);
+    
+    const [searchQuery, setSearchQuery] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
+    const rowsPerPage = 8;
 
     useEffect(() => {
-        fetchEvents().then(data => {
-            if (data) {
-                setState(prev => ({ ...prev, allEvents: data }));
-            }
-        });
-    }, []);
+        if (status === 'idle') {
+            dispatch(getEvents());
+        }
+    }, [status, dispatch]);
+
+    const handleFavorite = (id) => {
+        toggleFavorite(id);
+        setSearchQuery(prev => prev + " "); 
+        setTimeout(() => setSearchQuery(prev => prev.trim()), 10);
+    };
 
     function createEventCard(event, isFav) {
         return (
@@ -39,10 +45,7 @@ export default function EventsPage() {
                     </span>
                     <button 
                         className={`btn-fav ${isFav ? 'active' : ''}`}
-                        onClick={() => {
-                            toggleFavorite(event.id);
-                            setState(prev => ({ ...prev }));
-                        }}
+                        onClick={() => handleFavorite(event.id)}
                     >
                         {isFav ? '♥' : '♡'}
                     </button>
@@ -57,55 +60,17 @@ export default function EventsPage() {
         );
     }
 
-    function renderPagination(totalItems) {
-        const pageCount = Math.ceil(totalItems / state.rowsPerPage);
-        if (pageCount <= 1) return null;
-
-        return (
-            <nav className="pagination-container">
-                <button
-                    disabled={state.currentPage === 1}
-                    onClick={() => {
-                        setState(prev => ({ ...prev, currentPage: prev.currentPage - 1 }));
-                        window.scrollTo(0, 0);
-                    }}
-                >
-                    &larr;
-                </button>
-
-                {[...Array(pageCount)].map((_, i) => (
-                    <button
-                        key={i + 1}
-                        className={state.currentPage === i + 1 ? 'active' : ''}
-                        onClick={() => {
-                            setState(prev => ({ ...prev, currentPage: i + 1 }));
-                            window.scrollTo(0, 0);
-                        }}
-                    >
-                        {i + 1}
-                    </button>
-                ))}
-
-                <button
-                    disabled={state.currentPage === pageCount}
-                    onClick={() => {
-                        setState(prev => ({ ...prev, currentPage: prev.currentPage + 1 }));
-                        window.scrollTo(0, 0);
-                    }}
-                >
-                    &rarr;
-                </button>
-            </nav>
-        );
-    }
-
     const favorites = getFavorites();
-    const filtered = state.allEvents.filter(e =>
-        e.title.toLowerCase().includes(state.searchQuery.toLowerCase())
+    const filtered = allEvents.filter(e =>
+        e.title.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    const start = (state.currentPage - 1) * state.rowsPerPage;
-    const paginated = filtered.slice(start, start + state.rowsPerPage);
+    const start = (currentPage - 1) * rowsPerPage;
+    const paginated = filtered.slice(start, start + rowsPerPage);
+    const pageCount = Math.ceil(filtered.length / rowsPerPage);
+
+    if (status === 'loading') return <div className="container"><h2>Завантаження...</h2></div>;
+    if (status === 'failed') return <div className="container"><h2>Помилка: {error}</h2></div>;
 
     return (
         <div className="container">
@@ -114,25 +79,60 @@ export default function EventsPage() {
                 <div className="search-wrapper">
                     <input
                         type="text"
-                        id="search-input"
-                        placeholder="Пошук курсів..."
-                        value={state.searchQuery}
+                        placeholder="Пошук..."
+                        value={searchQuery}
                         onChange={(e) => {
-                            setState(prev => ({
-                                ...prev,
-                                searchQuery: e.target.value,
-                                currentPage: 1
-                            }));
+                            setSearchQuery(e.target.value);
+                            setCurrentPage(1);
                         }}
                     />
                 </div>
             </header>
 
             <div id="events-container">
-                {paginated.map(event => createEventCard(event, favorites.includes(event.id)))}
+                {paginated.length > 0 ? (
+                    paginated.map(event => createEventCard(event, favorites.includes(event.id)))
+                ) : (
+                    <p className="no-participants">Нічого не знайдено</p>
+                )}
             </div>
 
-            {renderPagination(filtered.length)}
+            {pageCount > 1 && (
+                <nav className="pagination-container">
+                    <button
+                        disabled={currentPage === 1}
+                        onClick={() => {
+                            setCurrentPage(prev => prev - 1);
+                            window.scrollTo(0, 0);
+                        }}
+                    >
+                        &larr;
+                    </button>
+
+                    {[...Array(pageCount)].map((_, i) => (
+                        <button
+                            key={i + 1}
+                            className={currentPage === i + 1 ? 'active' : ''}
+                            onClick={() => {
+                                setCurrentPage(i + 1);
+                                window.scrollTo(0, 0);
+                            }}
+                        >
+                            {i + 1}
+                        </button>
+                    ))}
+
+                    <button
+                        disabled={currentPage === pageCount}
+                        onClick={() => {
+                            setCurrentPage(prev => prev + 1);
+                            window.scrollTo(0, 0);
+                        }}
+                    >
+                        &rarr;
+                    </button>
+                </nav>
+            )}
         </div>
     );
 }
