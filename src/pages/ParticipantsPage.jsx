@@ -8,7 +8,6 @@ export default function ParticipantsPage() {
     const navigate = useNavigate();
     const dispatch = useDispatch();
 
-    // Отримуємо дані з Redux Store
     const participants = useSelector(selectFilteredParticipants);
     const { status, error, searchQuery } = useSelector(state => state.participants);
 
@@ -25,7 +24,6 @@ export default function ParticipantsPage() {
                 <button onClick={() => navigate(-1)} className="back-btn">← Назад</button>
                 <h1>Participants</h1>
                 
-                {/* Динамічна фільтрація */}
                 <input 
                     type="text"
                     className="search-input"

@@ -1,19 +1,29 @@
 import { createSlice, createAsyncThunk, createEntityAdapter, createSelector } from '@reduxjs/toolkit';
-import { fetchParticipants as apiFetchParticipants } from '../utils/api';
+import { fetchParticipants as apiFetchParticipants, importExternalUsers } from '../utils/api';
 
-// Використання Entity Adapter для просунутого рівня
 const participantsAdapter = createEntityAdapter();
 
 export const fetchParticipantsThunk = createAsyncThunk(
   'participants/fetchByEvent',
   async (eventId, { rejectWithValue }) => {
     try {
-      const data = await apiFetchParticipants(eventId);
-      return data;
+      return await apiFetchParticipants(eventId);
     } catch (err) {
-      return rejectWithValue(err.message || 'Не вдалося завантажити учасників');
+      return rejectWithValue(err.message);
     }
   }
+);
+
+// Новий Thunk для ЛР №3
+export const importUsersThunk = createAsyncThunk(
+    'participants/importExternal',
+    async (_, { rejectWithValue }) => {
+        try {
+            return await importExternalUsers();
+        } catch (err) {
+            return rejectWithValue(err.message);
+        }
+    }
 );
 
 const participantsSlice = createSlice({
@@ -30,26 +40,22 @@ const participantsSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchParticipantsThunk.pending, (state) => {
-        state.status = 'loading';
-      })
+      .addCase(fetchParticipantsThunk.pending, (state) => { state.status = 'loading'; })
       .addCase(fetchParticipantsThunk.fulfilled, (state, action) => {
         state.status = 'succeeded';
         participantsAdapter.setAll(state, action.payload);
       })
-      .addCase(fetchParticipantsThunk.rejected, (state, action) => {
-        state.status = 'failed';
-        state.error = action.payload;
+      .addCase(importUsersThunk.fulfilled, (state, action) => {
+        state.status = 'succeeded';
+        // Додаємо нових користувачів до існуючих
+        participantsAdapter.addMany(state, action.payload);
       });
   }
 });
 
 export const { setSearchQuery } = participantsSlice.actions;
-
-// Селектори
 export const { selectAll: selectAllParticipants } = participantsAdapter.getSelectors(state => state.participants);
 
-// Динамічна фільтрація на рівні селектора (вимога завдання)
 export const selectFilteredParticipants = createSelector(
   [selectAllParticipants, (state) => state.participants.searchQuery],
   (participants, query) => {

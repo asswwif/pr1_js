@@ -10,10 +10,15 @@ export async function fetchEvents() {
 }
 
 export async function registerToEvent(data) {
-    console.log('Sending POST request with data:', data);
+    console.log('Збереження учасника:', data);
     
     const allParticipants = JSON.parse(localStorage.getItem('participants') || '[]');
-    const newParticipant = { ...data, id: Date.now() };
+    const newParticipant = { 
+        ...data, 
+        id: Date.now(),
+        registrationDate: new Date().toISOString().split('T')[0]
+    };
+    
     allParticipants.push(newParticipant);
     localStorage.setItem('participants', JSON.stringify(allParticipants));
     
@@ -23,4 +28,25 @@ export async function registerToEvent(data) {
 export async function fetchParticipants(eventId) {
     const allParticipants = JSON.parse(localStorage.getItem('participants') || '[]');
     return allParticipants.filter(p => p.eventId === parseInt(eventId));
+}
+
+export async function importExternalUsers() {
+    try {
+        const response = await fetch('https://jsonplaceholder.typicode.com/users');
+        if (!response.ok) throw new Error('Помилка імпорту з зовнішнього API');
+        const users = await response.json();
+        
+        console.log("Дані успішно отримано з зовнішнього API:", users);
+
+        return users.map(user => ({
+            id: Date.now() + Math.random(), 
+            fullName: user.name,
+            email: user.email,
+            registrationDate: new Date().toISOString().split('T')[0],
+            eventId: 1 
+        }));
+    } catch (error) {
+        console.error("Помилка зовнішнього API:", error);
+        throw error;
+    }
 }
