@@ -1,8 +1,20 @@
-export async function fetchEvents() {
+/* export async function fetchEvents() {
     try {
         const response = await fetch('/events.json');
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         return await response.json();
+    } catch (error) {
+        console.error("Помилка завантаження подій:", error);
+        return [];
+    }
+}*/
+
+export async function fetchEvents(page = 1, limit = 10) {
+    try {
+        const response = await fetch(`http://localhost:3000/api/events?page=${page}&limit=${limit}`);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const result = await response.json();
+        return result.data; 
     } catch (error) {
         console.error("Помилка завантаження подій:", error);
         return [];
