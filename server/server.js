@@ -314,7 +314,7 @@ io.on('connection', (socket) => {
 
     socket.on('chat-message', ({ eventId, message, author, socketId }) => {
         const payload = { message, author, time: new Date().toISOString() };
-        socket.to(`event-${eventId}`).emit('chat-message', payload);
+        io.to(`event-${eventId}`).emit('chat-message', payload);
     });
 
     socket.on('disconnect', () => {
