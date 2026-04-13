@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 
 const eventSchema = new mongoose.Schema({
     title: String,
-    description: String,
+    body: String,
     date: Date,
     location: String,
     creator: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true } 
