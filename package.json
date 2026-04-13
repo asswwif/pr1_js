@@ -6,8 +6,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "server": "node server.js",
-    "server:dev": "npx nodemon server.js"
+    "server": "node server/server.js",
+    "server:dev": "npx nodemon server/server.js"
   },
   "dependencies": {
     "@apollo/server": "^4.13.0",
