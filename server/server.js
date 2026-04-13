@@ -286,7 +286,7 @@ const resolvers = {
       return await Event.find(q).limit(limit).skip(skip).populate("creator");
     },
 
-    getEventsPaginated: async (_, { first = 10, after, filter }) => {
+    getEventsPaginated: async (_, { first = 8, after, filter }) => {
       const q = filter ? { title: { $regex: filter, $options: "i" } } : {};
       if (after) {
         q._id = { $gt: Buffer.from(after, "base64").toString("utf8") };
