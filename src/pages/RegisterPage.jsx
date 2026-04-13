@@ -11,9 +11,7 @@ const registrationSchema = z.object({
         const today = new Date();
         let age = today.getFullYear() - birthDate.getFullYear();
         const monthDiff = today.getMonth() - birthDate.getMonth();
-        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-            age--;
-        }
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) age--;
         return age >= 18;
     }, "Реєстрація дозволена лише особам від 18 років"),
     source: z.string().min(1, "Будь ласка, оберіть варіант")
@@ -33,8 +31,11 @@ export default function RegisterPage() {
     });
 
     useEffect(() => {
-        fetchEvents().then(data => {
-            const found = data.find(e => e.id === parseInt(eventId));
+        fetchEvents(1, 100).then(data => {
+            const list = Array.isArray(data) ? data : (data.items || []);
+            const found = list.find(e => 
+                String(e._id || e.id) === String(eventId)
+            );
             if (found) setEvent(found);
             setLoading(false);
         });
@@ -50,7 +51,7 @@ export default function RegisterPage() {
         e.preventDefault();
         try {
             const validatedData = registrationSchema.parse(formData);
-            await registerToEvent({ ...validatedData, eventId: parseInt(eventId) });
+            await registerToEvent({ ...validatedData, eventId });
             alert('Реєстрація успішна!');
             navigate(`/participants/${eventId}`);
         } catch (error) {
@@ -60,11 +61,19 @@ export default function RegisterPage() {
                     fieldErrors[err.path[0]] = err.message;
                 });
                 setErrors(fieldErrors);
+            } else {
+                alert(error.message || 'Помилка реєстрації');
             }
         }
     };
 
     if (loading) return <div className="container">Завантаження...</div>;
+    if (!event) return (
+        <div className="container">
+            <button onClick={() => navigate(-1)} className="back-btn">← Назад</button>
+            <h2>Подію не знайдено</h2>
+        </div>
+    );
 
     const sourceOptions = [
         { value: 'social_media', label: 'Соціальні мережі' },
@@ -77,7 +86,7 @@ export default function RegisterPage() {
             <header className="register-header">
                 <button onClick={() => navigate(-1)} className="back-btn">← Назад</button>
                 <h1>Реєстрація на захід</h1>
-                <p className="event-title">"{event?.title}"</p>
+                <p className="event-title">"{event.title}"</p>
             </header>
 
             <form className="registration-form" onSubmit={handleSubmit}>
