@@ -13,28 +13,40 @@ import { Event, Participant, User } from "./models.js";
 const app = express();
 const httpServer = createServer(app);
 
-const io = new SocketServer(httpServer, {
-  cors: {
-    origin: [
-      "http://localhost:5173",
-      "https://lr31-k8kgpcifp-asswwifs-projects.vercel.app",
-    ],
-    credentials: true,
-  },
-});
-
 const DB_URL = process.env.DB_URL;
 const PORT = process.env.PORT || 3000;
 
+const allowedOrigins = ["http://localhost:5173", /\.vercel\.app$/];
+
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "https://lr31-k8kgpcifp-asswwifs-projects.vercel.app",
-    ],
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true);
+
+      const isAllowed = allowedOrigins.some((allowed) => {
+        return allowed instanceof RegExp
+          ? allowed.test(origin)
+          : allowed === origin;
+      });
+
+      if (isAllowed) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
   })
 );
+
+const io = new SocketServer(httpServer, {
+  cors: {
+    origin: (origin, callback) => {
+      callback(null, true);
+    },
+    credentials: true,
+  },
+});
 app.use(express.json());
 
 app.use(
