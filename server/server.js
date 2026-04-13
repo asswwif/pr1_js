@@ -42,11 +42,18 @@ app.use(
 const io = new SocketServer(httpServer, {
   cors: {
     origin: (origin, callback) => {
-      callback(null, true);
+      const allowedOrigins = ["http://localhost:5173", /\.vercel\.app$/];
+      if (!origin) return callback(null, true);
+      const isAllowed = allowedOrigins.some((o) =>
+        o instanceof RegExp ? o.test(origin) : o === origin
+      );
+      callback(isAllowed ? null : new Error("Not allowed"), isAllowed);
     },
     credentials: true,
+    methods: ["GET", "POST"],
   },
 });
+
 app.use(express.json());
 
 app.use(
@@ -54,7 +61,11 @@ app.use(
     secret: process.env.SESSION_SECRET_KEY,
     resave: false,
     saveUninitialized: false,
-    cookie: { maxAge: 3600000 },
+    cookie: {
+      maxAge: 3600000,
+      sameSite: "none",
+      secure: true,
+    },
   })
 );
 
